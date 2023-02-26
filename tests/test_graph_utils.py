@@ -11,6 +11,10 @@ def teardown_module(module):
     ...
 
 
+def test_describe_graph_by_name():
+    assert utils.describe_graph_by_name("bzip") == (632, 556, {"a", "d"})
+
+
 def test_get_graph():
     graph = utils.get_graph("generations")
     assert graph.number_of_edges() == 273
