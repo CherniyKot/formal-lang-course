@@ -1,6 +1,11 @@
+from collections import namedtuple
 import cfpq_data
 import networkx
 import pydot
+
+GraphDescription = namedtuple(
+    "GraphDescription", ["NumberOfNodes", "NumbreOfEdges", "Labels"]
+)
 
 
 def get_graph(name):
@@ -9,7 +14,7 @@ def get_graph(name):
 
 def describe_graph(graph):
     labels = set(label for _, _, label in graph.edges(data="label"))
-    return graph.number_of_nodes(), graph.number_of_edges(), labels
+    return GraphDescription(graph.number_of_nodes(), graph.number_of_edges(), labels)
 
 
 def describe_graph_by_name(name):
