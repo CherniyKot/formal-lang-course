@@ -4,12 +4,12 @@ from pyformlang.finite_automaton import *
 
 def build_DFA_from_regexp(regexp) -> DeterministicFiniteAutomaton:
     regexp = Regex(regexp)
-    return regexp.to_epsilon_nfa().to_deterministic()
+    return regexp.to_epsilon_nfa().minimize()
 
 
 def build_DFA_from_python_regexp(regexp) -> DeterministicFiniteAutomaton:
     regexp = PythonRegex(regexp)
-    return regexp.to_epsilon_nfa().to_deterministic()
+    return regexp.to_epsilon_nfa().minimize()
 
 
 def build_NDFA_from_graph(graph, start=None, final=None) -> EpsilonNFA:
