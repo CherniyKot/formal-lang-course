@@ -1,6 +1,7 @@
 from pyformlang.regular_expression import *
 from pyformlang.finite_automaton import *
 from scipy.sparse import *
+import networkx as nx
 
 
 def build_DFA_from_regexp(regexp) -> DeterministicFiniteAutomaton:
@@ -15,6 +16,9 @@ def build_DFA_from_python_regexp(regexp) -> DeterministicFiniteAutomaton:
 
 def build_NDFA_from_graph(graph, start=None, final=None) -> EpsilonNFA:
     ndfa = EpsilonNFA.from_networkx(graph)
+
+    for s, f, label in graph.edges(data="label"):
+        ndfa.add_transition(s, label, f)
 
     if start is not None:
         for s in start:
@@ -32,7 +36,7 @@ def build_NDFA_from_graph(graph, start=None, final=None) -> EpsilonNFA:
     return ndfa
 
 
-def convert_FA_to_matrix_form(fa: EpsilonNFA) -> dict[str, dok_matrix]:
+def convert_FA_to_matrix_form(fa: EpsilonNFA) -> dict[any, dok_matrix]:
     result = dict()
 
     states = list(fa.states)
@@ -73,3 +77,35 @@ def intersect_FA(fa1: EpsilonNFA, fa2: EpsilonNFA) -> EpsilonNFA:
             )
 
     return result
+
+
+def _find_common_paths_in_FAs(fa1, fa2):
+    fai = intersect_FA(fa1, fa2)
+    graph = fai.to_networkx()
+    states = list(fa1.states)
+    result = []
+
+    for s in fai.start_states:
+        for f in fai.final_states:
+            if nx.has_path(graph, s, f):
+                result.append(
+                    (
+                        states[s.value // len(fa2.states)],
+                        states[f.value // len(fa2.states)],
+                    )
+                )
+    return result
+
+
+def query_graph_with_regexp(graph, start: set, final: set, regexp: str) -> list[tuple]:
+    fa1 = build_NDFA_from_graph(graph, start, final)
+    fa2 = build_DFA_from_regexp(regexp)
+    return _find_common_paths_in_FAs(fa1, fa2)
+
+
+def query_graph_with_python_regexp(
+    graph, start: set, final: set, regexp: str
+) -> list[tuple]:
+    fa1 = build_NDFA_from_graph(graph, start, final)
+    fa2 = build_DFA_from_python_regexp(regexp)
+    return _find_common_paths_in_FAs(fa1, fa2)
