@@ -40,3 +40,22 @@ def test_build_from_graph():
     assert len(ndfa.states) == len(g_utils.get_graph("bzip").nodes)
     assert ndfa.start_states == set([1, 77, 294])
     assert ndfa.final_states == set([10])
+
+
+def test_intersect_fa():
+    fa1 = fa_utils.build_DFA_from_python_regexp("Hello.*")
+    fa2 = fa_utils.build_DFA_from_python_regexp(".* world!")
+    fai = fa_utils.intersect_FA(fa1, fa2)
+
+    assert fa1.accepts("Hello")
+    assert fa2.accepts(" world!")
+
+    assert fa1.accepts("Hello world!")
+    assert fa2.accepts("Hello world!")
+
+    assert fai.accepts("Hello world!")
+    assert fai.accepts("Hello, beautiful world!")
+    assert not fai.accepts("Hello")
+    assert not fai.accepts(" world!")
+
+    assert fa1.get_intersection(fa2).is_equivalent_to(fai)
