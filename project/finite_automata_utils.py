@@ -81,7 +81,7 @@ def intersect_FA(fa1: EpsilonNFA, fa2: EpsilonNFA) -> EpsilonNFA:
 
 def _find_common_paths_in_FAs(fa1, fa2):
     fai = intersect_FA(fa1, fa2)
-    graph = fai.to_networkx()
+    graph = nx.transitive_closure(nx.DiGraph(fai.to_networkx()))
     states = list(fa1.states)
     result = []
 
