@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import networkx as nx
 from pyformlang.finite_automaton import *
+from collections import defaultdict
 from pyformlang.regular_expression import *
 from scipy.sparse import *
 
