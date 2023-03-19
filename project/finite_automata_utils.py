@@ -1,5 +1,6 @@
 import networkx as nx
 from pyformlang.finite_automaton import *
+from collections import defaultdict
 from pyformlang.regular_expression import *
 from scipy.sparse import *
 
@@ -165,3 +166,119 @@ def query_graph_with_python_regexp(
     fa1 = build_NDFA_from_graph(graph, start, final)
     fa2 = build_DFA_from_python_regexp(regexp)
     return _find_common_paths_in_FAs(fa1, fa2)
+
+
+def nodes_accesible_with_regexp_constraint(
+    nodes: set, graph: nx.MultiDiGraph, repexp: str, separate_for_nodes=False
+) -> dict[any, set]:
+    regexp_dfa = build_DFA_from_regexp(repexp)
+    constraint_m = convert_FA_to_matrix_form(regexp_dfa)
+    graph_m = convert_FA_to_matrix_form(build_NDFA_from_graph(graph))
+    graph_nodes = list(graph.nodes.values())
+    matrices = dict()
+
+    for symb in constraint_m.keys() & graph_m.keys():
+        matrices[symb] = hstack(
+            (
+                vstack(
+                    (constraint_m[symb], dok_matrix(graph_m[symb].shape, dtype=bool))
+                ),
+                vstack(
+                    (graph_m[symb], dok_matrix(constraint_m[symb].shape, dtype=bool))
+                ),
+            )
+        )
+
+    def nodes_to_indices(nodes: set):
+        result = []
+        for n in graph_nodes:
+            if n in nodes:
+                result.append(True)
+            else:
+                result.append(False)
+        return result
+
+    def indices_to_nodes(indices: list):
+        result = set()
+        for i, v in enumerate(indices):
+            if v != 0:
+                result.add(graph_nodes[i])
+        return result
+
+    matrix_size = len(constraint_m.keys())
+    unary_matrix = eye(matrix_size, dtype=bool)
+
+    def transform_matrix(matrix: coo_matrix):
+        result = lil_matrix((matrix_size, matrix_size + len(graph_nodes)), dtype=bool)
+        result[0:matrix_size, 0:matrix_size] = unary_matrix
+
+        t = matrix.copy()
+        t.resize((matrix_size, matrix_size))
+        for row in t.nonzero()[0]:
+            result[row, matrix_size + 1 :] = matrix[row, matrix_size + 1 :]
+        return result
+
+    result = defaultdict(set)
+    if separate_for_nodes:
+        for node in nodes:
+            front = hstack(
+                (
+                    unary_matrix,
+                    vstack(
+                        (
+                            nodes_to_indices({node}),
+                            dok_matrix((matrix_size - 1, len(graph_nodes)), dtype=bool),
+                        )
+                    ),
+                )
+            )
+
+            prev = None
+            while (prev != front).sum() != 0:
+                prev = front.copy()
+                front[:] = 0
+                for m in matrices.values():
+                    t = prev @ m
+                    t = transform_matrix(t)
+                    front += t
+
+                result[node] += indices_to_nodes(front.sum(0).tolist()[0])
+    else:
+        front = hstack(
+            (
+                unary_matrix,
+                vstack(
+                    (
+                        nodes_to_indices(nodes),
+                        dok_matrix((matrix_size - 1, len(graph_nodes)), dtype=bool),
+                    )
+                ),
+            )
+        )
+
+        prev = None
+        while (prev != front).sum() != 0:
+            prev = front.copy()
+            front[:] = 0
+            for m in matrices.values():
+                t = prev @ m
+                t = transform_matrix(t)
+                front += t
+
+            result[nodes] += indices_to_nodes(front.sum(0).tolist()[0])
+
+    return result
+
+
+def bfs_query_graph_with_regexp(
+    graph, start: set, final: set, regexp: str
+) -> list[tuple]:
+    t = nodes_accesible_with_regexp_constraint(
+        start, graph, regexp, separate_for_nodes=True
+    )
+    result = []
+    for k, v in t.items():
+        for r in v & final:
+            result.append(k, r)
+
+    return result

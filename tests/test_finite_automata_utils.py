@@ -83,3 +83,26 @@ def test_query_graph_with_python_regexp():
     result = fa_utils.query_graph_with_regexp(graph, start, final, regexp)
 
     assert {(1, 4), (2, 5)} == set(result)
+
+
+def test_bfs_query_graph_with_python_regexp():
+    start = [1, 2, 3]
+    final = [4, 5, 6]
+
+    graph = nx.from_edgelist(
+        [
+            (1, 4, {"label": "a"}),
+            (2, 5, {"label": "b"}),
+            (3, 6, {"label": "c"}),
+        ]
+    )
+
+    regexp = "a|b"
+
+    assert Regex(regexp).accepts("a")
+    assert Regex(regexp).accepts("b")
+    assert not Regex(regexp).accepts("c")
+
+    result = fa_utils.bfs_query_graph_with_regexp(graph, start, final, regexp)
+
+    assert {(1, 4), (2, 5)} == set(result)
