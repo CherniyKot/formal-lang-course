@@ -46,8 +46,12 @@ def test_wnf():
 
         for p in cfg.productions:
             assert (
-                    (len(p.body) == 2 and isinstance(p.body[0], Variable) and isinstance(p.body[1], Variable)) or
-                    (len(p.body) == 1 and (isinstance(p.body[0], Terminal) or isinstance(p.body[0], Epsilon)))
+                len(p.body) == 2
+                and isinstance(p.body[0], Variable)
+                and isinstance(p.body[1], Variable)
+            ) or (
+                len(p.body) == 1
+                and (isinstance(p.body[0], Terminal) or isinstance(p.body[0], Epsilon))
             )
 
     finally:
