@@ -17,10 +17,9 @@ def to_wcnf(cfg: CFG) -> CFG:
     :param cfg: original CFG
     :return: CFG equivalent to the original but in Weak Normal Chomsky Form
     """
-    prods = cfg._get_productions_with_only_single_terminals()
-    prods = cfg._decompose_productions(prods)
-    cfg = CFG(start_symbol=cfg.start_symbol, productions=prods)
-
     cfg = cfg.eliminate_unit_productions()
     cfg = cfg.remove_useless_symbols()
-    return cfg
+
+    prods = cfg._get_productions_with_only_single_terminals()
+    prods = cfg._decompose_productions(prods)
+    return CFG(start_symbol=cfg.start_symbol, productions=prods)
