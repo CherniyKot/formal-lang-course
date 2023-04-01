@@ -1,7 +1,6 @@
 from collections import namedtuple
 import cfpq_data
-import networkx
-import pydot
+import networkx as nx
 
 GraphDescription = namedtuple(
     "GraphDescription", ["NumberOfNodes", "NumbreOfEdges", "Labels"]
@@ -24,5 +23,5 @@ def describe_graph_by_name(name):
 
 def save_labeled_two_cycle_graph(path, n, m, labels=("a", "b")):
     graph = cfpq_data.labeled_two_cycles_graph(n, m, labels=labels)
-    networkx.drawing.nx_pydot.write_dot(graph, path)
+    nx.drawing.nx_pydot.write_dot(graph, path)
     return graph
