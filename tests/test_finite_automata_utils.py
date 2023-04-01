@@ -105,4 +105,4 @@ def test_bfs_query_graph_with_python_regexp():
 
     result = fa_utils.bfs_query_graph_with_regexp(graph, start, final, regexp)
 
-    assert {(1, 4), (2, 5)} == set(result)
+    assert set(result) == {(1, 4), (2, 5)}

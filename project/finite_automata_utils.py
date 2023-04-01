@@ -182,21 +182,15 @@ def nodes_accesible_with_regexp_constraint(
     """
     regexp_dfa = build_DFA_from_regexp(repexp)
     constraint_m = convert_FA_to_matrix_form(regexp_dfa)
-    graph_m = convert_FA_to_matrix_form(build_NDFA_from_graph(graph))
-    graph_nodes = list(graph.nodes.values())
+    constraint_nodes = list(regexp_dfa.states)
+    graph_ndfa = build_NDFA_from_graph(graph)
+    graph_m = convert_FA_to_matrix_form(graph_ndfa)
+    graph_nodes = list(graph_ndfa.states)
     matrices = dict()
 
     for symb in constraint_m.keys() & graph_m.keys():
-        matrices[symb] = hstack(
-            (
-                vstack(
-                    (constraint_m[symb], dok_matrix(graph_m[symb].shape, dtype=bool))
-                ),
-                vstack(
-                    (graph_m[symb], dok_matrix(constraint_m[symb].shape, dtype=bool))
-                ),
-            )
-        )
+        matrices[symb] = block_diag((constraint_m[symb], graph_m[symb]))
+
 
     def nodes_to_indices(nodes: set):
         """
@@ -214,6 +208,7 @@ def nodes_accesible_with_regexp_constraint(
         """
         Transforms list of indices to set of graph nodes
         """
+        indices = indices[matrix_size:]
         result = set()
         for i, v in enumerate(indices):
             if v != 0:
@@ -232,8 +227,8 @@ def nodes_accesible_with_regexp_constraint(
 
         t = matrix.copy()
         t.resize((matrix_size, matrix_size))
-        for row in t.nonzero()[0]:
-            result[row, matrix_size + 1 :] = matrix[row, matrix_size + 1 :]
+        for row, col in zip(*t.nonzero()):
+            result[col, matrix_size + 1 :] = matrix[row, matrix_size + 1 :]
         return result
 
     result = defaultdict(set)
@@ -241,18 +236,15 @@ def nodes_accesible_with_regexp_constraint(
         for node in nodes:
             front = hstack(
                 (
-                    unary_matrix,
-                    vstack(
-                        (
-                            nodes_to_indices({node}),
-                            dok_matrix((matrix_size - 1, len(graph_nodes)), dtype=bool),
-                        )
-                    ),
-                )
+                    unary_matrix, dok_matrix((matrix_size, len(graph_nodes)), dtype=bool)
+                ), "csr"
             )
+            for state in regexp_dfa.start_states:
+                front[constraint_nodes.index(state),matrix_size:]=nodes_to_indices({node})
+
 
             prev = None
-            while (prev != front).sum() != 0:
+            while prev is None or (prev != front).sum() != 0:
                 prev = front.copy()
                 front[:] = 0
                 for m in matrices.values():
@@ -260,7 +252,7 @@ def nodes_accesible_with_regexp_constraint(
                     t = _transform_matrix(t)
                     front += t
 
-                result[node] += _indices_to_nodes(front.sum(0).tolist()[0])
+                result[node].update(_indices_to_nodes(front.sum(0).tolist()[0]))
     else:
         front = hstack(
             (
@@ -283,7 +275,7 @@ def nodes_accesible_with_regexp_constraint(
                 t = _transform_matrix(t)
                 front += t
 
-            result[nodes] += _indices_to_nodes(front.sum(0).tolist()[0])
+            result[nodes].update(_indices_to_nodes(front.sum(0).tolist()[0]))
 
     return result
 
@@ -299,6 +291,8 @@ def bfs_query_graph_with_regexp(
     :param regexp: basic regexp string
     :return: List of pairs [start vertex - final vertex] from graph that have the corresponding path with regexp constraint
     """
+    start = set(start)
+    final = set(final)
     t = nodes_accesible_with_regexp_constraint(
         start, graph, regexp, separate_for_nodes=True
     )
