@@ -1,6 +1,7 @@
+from collections import defaultdict
+
 import networkx as nx
 from pyformlang.finite_automaton import *
-from collections import defaultdict
 from pyformlang.regular_expression import *
 from scipy.sparse import *
 
@@ -171,6 +172,14 @@ def query_graph_with_python_regexp(
 def nodes_accesible_with_regexp_constraint(
     nodes: set, graph: nx.MultiDiGraph, repexp: str, separate_for_nodes=False
 ) -> dict[any, set]:
+    """
+    Computes nodes that can be achieved in graph from the start nodes with regexp constraint
+    :param nodes: Starting nodes in BFS
+    :param graph: Graph representation of the NDFA
+    :param repexp: Basic regexp string
+    :param separate_for_nodes: If True - computes separate result for each node in nodes. If False - computes one result with all nodes in Node marked as starting
+    :return: Dict with either one entry [set of nodes - set of all the achievable nodes] or separate entries for each node in nodes depending on the separate_for_nodes param
+    """
     regexp_dfa = build_DFA_from_regexp(repexp)
     constraint_m = convert_FA_to_matrix_form(regexp_dfa)
     graph_m = convert_FA_to_matrix_form(build_NDFA_from_graph(graph))
@@ -190,6 +199,9 @@ def nodes_accesible_with_regexp_constraint(
         )
 
     def nodes_to_indices(nodes: set):
+        """
+        Transforms set of graph nodes to list of bools
+        """
         result = []
         for n in graph_nodes:
             if n in nodes:
@@ -198,7 +210,10 @@ def nodes_accesible_with_regexp_constraint(
                 result.append(False)
         return result
 
-    def indices_to_nodes(indices: list):
+    def _indices_to_nodes(indices: list):
+        """
+        Transforms list of indices to set of graph nodes
+        """
         result = set()
         for i, v in enumerate(indices):
             if v != 0:
@@ -208,7 +223,10 @@ def nodes_accesible_with_regexp_constraint(
     matrix_size = len(constraint_m.keys())
     unary_matrix = eye(matrix_size, dtype=bool)
 
-    def transform_matrix(matrix: coo_matrix):
+    def _transform_matrix(matrix: coo_matrix):
+        """
+        Transforms BFS front matrix to [E|M] form
+        """
         result = lil_matrix((matrix_size, matrix_size + len(graph_nodes)), dtype=bool)
         result[0:matrix_size, 0:matrix_size] = unary_matrix
 
@@ -239,10 +257,10 @@ def nodes_accesible_with_regexp_constraint(
                 front[:] = 0
                 for m in matrices.values():
                     t = prev @ m
-                    t = transform_matrix(t)
+                    t = _transform_matrix(t)
                     front += t
 
-                result[node] += indices_to_nodes(front.sum(0).tolist()[0])
+                result[node] += _indices_to_nodes(front.sum(0).tolist()[0])
     else:
         front = hstack(
             (
@@ -262,10 +280,10 @@ def nodes_accesible_with_regexp_constraint(
             front[:] = 0
             for m in matrices.values():
                 t = prev @ m
-                t = transform_matrix(t)
+                t = _transform_matrix(t)
                 front += t
 
-            result[nodes] += indices_to_nodes(front.sum(0).tolist()[0])
+            result[nodes] += _indices_to_nodes(front.sum(0).tolist()[0])
 
     return result
 
@@ -273,12 +291,20 @@ def nodes_accesible_with_regexp_constraint(
 def bfs_query_graph_with_regexp(
     graph, start: set, final: set, regexp: str
 ) -> list[tuple]:
+    """
+    Runs a BFS and returns pairs [start vertex - final vertex] from graph that have the corresponding path with regexp constraint
+    :param graph: Graph representation of the NDFA
+    :param start: Start states of the NDFA. If None - all states are considered start states
+    :param final: Final states of the NDFA. If None - all states are considered final states
+    :param regexp: basic regexp string
+    :return: List of pairs [start vertex - final vertex] from graph that have the corresponding path with regexp constraint
+    """
     t = nodes_accesible_with_regexp_constraint(
         start, graph, regexp, separate_for_nodes=True
     )
     result = []
     for k, v in t.items():
         for r in v & final:
-            result.append(k, r)
+            result.append((k, r))
 
     return result
