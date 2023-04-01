@@ -1,20 +1,39 @@
-from pyformlang.regular_expression import *
-from pyformlang.finite_automaton import *
-from scipy.sparse import *
 import networkx as nx
+from pyformlang.finite_automaton import *
+from pyformlang.regular_expression import *
+from scipy.sparse import *
 
 
-def build_DFA_from_regexp(regexp) -> DeterministicFiniteAutomaton:
+def build_DFA_from_regexp(regexp: str) -> DeterministicFiniteAutomaton:
+    """
+    Builds DFA from regexp string
+    :param regexp: basic regexp string
+    :return: DFA equivalent to the regexp
+    """
     regexp = Regex(regexp)
     return regexp.to_epsilon_nfa().minimize()
 
 
-def build_DFA_from_python_regexp(regexp) -> DeterministicFiniteAutomaton:
+def build_DFA_from_python_regexp(regexp: str) -> DeterministicFiniteAutomaton:
+    """
+    Builds DFA from python regexp string
+    :param regexp: python regexp string
+    :return: DFA equivalent to the regexp
+    """
     regexp = PythonRegex(regexp)
     return regexp.to_epsilon_nfa().minimize()
 
 
-def build_NDFA_from_graph(graph, start=None, final=None) -> EpsilonNFA:
+def build_NDFA_from_graph(
+    graph: nx.DiGraph, start: set[State] = None, final: set[State] = None
+) -> EpsilonNFA:
+    """
+    Builds NDFA from graph representation, start and final nodes
+    :param graph: Graph representation of the resulting NDFA
+    :param start: Start states of the resulting NDFA. If None - all states are considered start states
+    :param final: Final states of the resulting NDFA. If None - all states are considered final states
+    :return: NDFA built from graph representation, start and final nodes
+    """
     ndfa = EpsilonNFA.from_networkx(graph)
 
     for s, f, label in graph.edges(data="label"):
@@ -37,6 +56,11 @@ def build_NDFA_from_graph(graph, start=None, final=None) -> EpsilonNFA:
 
 
 def convert_FA_to_matrix_form(fa: EpsilonNFA) -> dict[any, dok_matrix]:
+    """
+    Creates a boolean decomposition of the NDFA
+    :param fa: NDFA to be decomposed
+    :return: Dict of pairs [symbol - adjacency matrix] representing the original NDFA
+    """
     result = dict()
 
     states = list(fa.states)
@@ -52,6 +76,12 @@ def convert_FA_to_matrix_form(fa: EpsilonNFA) -> dict[any, dok_matrix]:
 
 
 def intersect_FA(fa1: EpsilonNFA, fa2: EpsilonNFA) -> EpsilonNFA:
+    """
+    Intersects two NDFAs
+    :param fa1: first NDFA
+    :param fa2: second NDFA
+    :return: NDFA that accepts only words accepted by both original NDFAs
+    """
     m1 = convert_FA_to_matrix_form(fa1)
     m2 = convert_FA_to_matrix_form(fa2)
     states1 = list(fa1.states)
@@ -79,7 +109,15 @@ def intersect_FA(fa1: EpsilonNFA, fa2: EpsilonNFA) -> EpsilonNFA:
     return result
 
 
-def _find_common_paths_in_FAs(fa1, fa2):
+def _find_common_paths_in_FAs(
+    fa1: EpsilonNFA, fa2: EpsilonNFA
+) -> list[tuple[State, State]]:
+    """
+    Returns list of pairs [start state - final state] from first NDFA that satisfy both NDFAs
+    :param fa1: first NDFA
+    :param fa2: second NDFA
+    :return: List of pairs [start state - final state] from first NDFA that satisfy both NDFAs
+    """
     fai = intersect_FA(fa1, fa2)
     graph = nx.transitive_closure(nx.DiGraph(fai.to_networkx()))
     states = list(fa1.states)
@@ -97,15 +135,33 @@ def _find_common_paths_in_FAs(fa1, fa2):
     return result
 
 
-def query_graph_with_regexp(graph, start: set, final: set, regexp: str) -> list[tuple]:
+def query_graph_with_regexp(
+    graph: nx.DiGraph, start: set, final: set, regexp: str
+) -> list[tuple]:
+    """
+    Returns list of pairs [start vertex - final vertex] from graph that satisfy graph as an ANDA and regexp simultaneously
+    :param graph: Graph representation of the NDFA
+    :param start: Start states of the NDFA. If None - all states are considered start states
+    :param final: Final states of the resulting NDFA. If None - all states are considered final states
+    :param regexp: basic regexp string
+    :return: List of pairs [start vertex - final vertex] from graph that satisfy graph as an ANDA and regexp simultaneously
+    """
     fa1 = build_NDFA_from_graph(graph, start, final)
     fa2 = build_DFA_from_regexp(regexp)
     return _find_common_paths_in_FAs(fa1, fa2)
 
 
 def query_graph_with_python_regexp(
-    graph, start: set, final: set, regexp: str
+    graph: nx.DiGraph, start: set, final: set, regexp: str
 ) -> list[tuple]:
+    """
+    Returns list of pairs [start vertex - final vertex] from graph that satisfy graph as an ANDA and python regexp simultaneously
+    :param graph: Graph representation of the NDFA
+    :param start: Start states of the NDFA. If None - all states are considered start states
+    :param final: Final states of the resulting NDFA. If None - all states are considered final states
+    :param regexp: python regexp string
+    :return: List of pairs [start vertex - final vertex] from graph that satisfy graph as an ANDA and python regexp simultaneously
+    """
     fa1 = build_NDFA_from_graph(graph, start, final)
     fa2 = build_DFA_from_python_regexp(regexp)
     return _find_common_paths_in_FAs(fa1, fa2)
