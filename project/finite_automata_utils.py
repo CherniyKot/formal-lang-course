@@ -191,7 +191,6 @@ def nodes_accesible_with_regexp_constraint(
     for symb in constraint_m.keys() & graph_m.keys():
         matrices[symb] = block_diag((constraint_m[symb], graph_m[symb]))
 
-
     def nodes_to_indices(nodes: set):
         """
         Transforms set of graph nodes to list of bools
@@ -235,13 +234,13 @@ def nodes_accesible_with_regexp_constraint(
     if separate_for_nodes:
         for node in nodes:
             front = hstack(
-                (
-                    unary_matrix, dok_matrix((matrix_size, len(graph_nodes)), dtype=bool)
-                ), "csr"
+                (unary_matrix, dok_matrix((matrix_size, len(graph_nodes)), dtype=bool)),
+                "csr",
             )
             for state in regexp_dfa.start_states:
-                front[constraint_nodes.index(state),matrix_size:]=nodes_to_indices({node})
-
+                front[constraint_nodes.index(state), matrix_size:] = nodes_to_indices(
+                    {node}
+                )
 
             prev = None
             while prev is None or (prev != front).sum() != 0:
