@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pyformlang.finite_automaton.state import State
 from pyformlang.cfg import CFG
 from pyformlang.finite_automaton import *
@@ -57,8 +58,12 @@ class ECFG:
         result = ECFG()
         result.start = cfg.start_symbol
 
-        for p in cfg.productions:
-            tr: Regex = result.transitions.setdefault(State(p.head), Regex())
-            tr += Regex("|".join(p.body))
+        tr = defaultdict(list)
 
+        for p in cfg.productions:
+            tr[p.head].append(
+                " ".join(map(lambda t: t.value, p.body)) if len(p.body) > 0 else "$"
+            )
+        for h, b in tr.items():
+            result.transitions[State(h)] = Regex("|".join(b))
         return result
