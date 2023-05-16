@@ -27,6 +27,9 @@ def to_wcnf(cfg: CFG) -> CFG:
 
 
 def hellings(graph: nx.DiGraph, cfg: CFG):
+    """
+    Hellings algorythm for all nodes reachability
+    """
     # cfg = cfg.to_normal_form()
     cfg = to_wcnf(cfg)
     r = set()
@@ -76,6 +79,9 @@ def hellings(graph: nx.DiGraph, cfg: CFG):
 def query_hellings(
     graph: nx.DiGraph, cfg: CFG, start: set = None, final: set = None, nonterminal=None
 ):
+    """
+    Solves reachability problem for graph and CFG for provided start, final nodes and nonterminal symbol
+    """
     if start is None:
         start = set(graph.nodes)
 
