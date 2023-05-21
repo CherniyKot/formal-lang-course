@@ -26,9 +26,10 @@ jobs:
         pip install antlr4-tools
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Build ANTLR
+      run: |
+        antlr4 -o tmp/formal-lang-course/gen -listener -visitor -Dlanguage=Python3 Gram.g4
+    - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: antlr-gen
         path: tmp/formal-lang-course/gen
-      run: |
-        antlr4 -o tmp/formal-lang-course/gen -listener -visitor -Dlanguage=Python3 Gram.g4
