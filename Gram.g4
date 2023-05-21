@@ -23,7 +23,7 @@ id      : STRING (INT)*;
 v:
         '\'' value=.*? '\''                 #string
     |   INT                                 #int
-    |   '[' id* ']'                         #set
+    |   '[' (v?| v ( ','v)*) ']'            #set
     ;
 
 
