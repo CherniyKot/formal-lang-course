@@ -28,7 +28,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Build ANTLR
       run: |
-        antlr4 -o /gen -listener -visitor -Dlanguage=Python3 Gram.g4
+        antlr4 -o ./gen -listener -visitor -Dlanguage=Python3 Gram.g4
     - name: Run tests
       run: |
         python ./scripts/run_tests.py
