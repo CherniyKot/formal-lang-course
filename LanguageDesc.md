@@ -1,9 +1,9 @@
-## Структура языка описана ниже в формате ANTLR  
+## Структура языка описана ниже в формате ANTLR
 
     grammar Gram;
-    
+
     prog:   (expr SEMICOLON)* EOF;
-    
+
     expr:
                                                 #empty
         |   id EQ (expr)                        #bind
@@ -19,16 +19,16 @@
         |   id                                  #var
         |   v                                   #val
         ;
-    
+
     id      : STRING (INT)*;
-    
+
     v:
             '\'' value=.*? '\''                 #string
         |   INT                                 #int
         |   '[' id* ']'                         #set
         ;
-    
-    
+
+
     operator:
             'set_final'
         |   'set_start'
@@ -41,20 +41,20 @@
         |   'get_edges'
         |   'get_labels'
         ;
-    
+
     lambda: var=id '=>' code;
-    
+
     code: '{{' .*? '}}';
-    
+
     STRING  : [A-Za-z_]+;
     WS : [ \t\n\r]+ -> skip;
     INT     : [0-9]+ ;
-    
+
     SEMICOLON: ';';
     EQ: '=';
     PATH: [-a-zA-Z0-9@:%._+~#=]{1,256}'.'[a-zA-Z0-9()]{1,6} '\b' ([-a-zA-Z0-9()@:%_+.~#?&/=]*) ;
 
-### Примеры кода:  
+### Примеры кода:
 1. Загружает граф и выводит его ноды и ребра
 
         g=load('vk.ru/graph');
