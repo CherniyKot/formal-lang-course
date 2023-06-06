@@ -71,3 +71,16 @@ def test_matrix_alg():
     result = c_utils.query_matrix(graph, cfg)
     print(result)
     assert result == {(0, 2), (0, 3), (1, 2), (1, 3), (2, 2), (2, 3)}
+
+
+def test_hellings():
+    cfg = CFG.from_text("S->A B\n S -> A S1\n S1->S B\n A->a\n B->b")
+    graph = nx.MultiDiGraph()
+    graph.add_edge(0, 1, label="a")
+    graph.add_edge(1, 2, label="a")
+    graph.add_edge(2, 0, label="a")
+    graph.add_edge(2, 3, label="b")
+    graph.add_edge(3, 2, label="b")
+
+    result = c_utils.query_hellings(graph, cfg)
+    assert result == {(0, 2), (0, 3), (1, 2), (1, 3), (2, 2), (2, 3)}
