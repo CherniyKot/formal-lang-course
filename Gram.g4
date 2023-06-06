@@ -8,7 +8,6 @@ sentence:
     |   'print' '(' expr ')'                #print
     ;
 
-
 expr:
         expr '.' operator '(' expr? ')'     #op
     |   expr '.' 'map' '(' lambda ')'       #map
