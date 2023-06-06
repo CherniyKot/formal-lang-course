@@ -8,8 +8,10 @@ import project.cfg_utils
 from gen.GramLexer import GramLexer
 from gen.GramParser import GramParser
 from gen.GramVisitor import GramVisitor
-import graph_utils as gu
-import finite_automata_utils as fau
+import project.graph_utils as gu
+
+
+# import finite_automata_utils as fau
 
 
 class Visitor(GramVisitor):
@@ -21,19 +23,24 @@ class Visitor(GramVisitor):
         self.vars = dict()
 
     def extractExprResult(self, expr_ctx):
+        if expr_ctx is None:
+            return None
         expr_r = expr_ctx.accept(self)
         if isinstance(expr_r, Visitor.ID):
-            return expr_r.value
+            if expr_r.value in self.vars:
+                return self.vars[expr_r.value]
+            else:
+                return expr_r
         else:
             return expr_r
 
     # Visit a parse tree produced by GramParser#op.
     def visitOp(self, ctx: GramParser.OpContext):
         expr_c = ctx.expr()
-        if isinstance(expr_c, list):
+        if len(expr_c) == 2:
             expr1_c, expr2_c = expr_c
         else:
-            expr1_c, expr_c = expr_c, None
+            expr1_c, expr2_c = expr_c[0], None
 
         op_c: GramParser.OperatorContext = ctx.operator()
 
@@ -137,7 +144,7 @@ class Visitor(GramVisitor):
         g2 = self.extractExprResult(expr2_c)
 
         if isinstance(g1, nx.MultiDiGraph) and isinstance(g2, nx.MultiDiGraph):
-            return nx.union(g1, g2)
+            return nx.disjoint_union(g1, g2)
         elif isinstance(g1, set) and isinstance(g2, set):
             return g1 | g2
         else:
@@ -159,8 +166,8 @@ class Visitor(GramVisitor):
 
     # Visit a parse tree produced by GramParser#symb.
     def visitSymb(self, ctx: GramParser.SymbContext):
-        str_c: GramParser.StringContext = ctx.STRING()
-        symb = str_c.accept(self)
+        str_c = ctx.STRING()
+        symb = str_c.getText()
         result: EpsilonNFA = Regex(symb).to_epsilon_nfa()
         return result.to_networkx()
 
@@ -178,7 +185,7 @@ class Visitor(GramVisitor):
     def visitBind(self, ctx: GramParser.BindContext):
         id_c: GramParser.IdContext = ctx.id_()
         expr_c: GramParser.ExprContext = ctx.expr()
-        self.vars[id_c.accept(self)] = self.extractExprResult(expr_c)
+        self.vars[id_c.accept(self).value] = self.extractExprResult(expr_c)
 
     # Visit a parse tree produced by GramParser#load.
     def visitLoad(self, ctx: GramParser.LoadContext):
@@ -251,7 +258,10 @@ class Visitor(GramVisitor):
             result = list()
             for i in s:
                 r = None
-                exec(f'r = lambda {id}:{code}({i})', self.vars)
+                #TODO
+                print(f'r = (lambda {id.value}:{code})({i})')
+                exec(f'r = (lambda {id.value}:{code})({i})', self.vars, {'r':r})
+                print(r)
                 result.append(r)
             return result
 
@@ -288,7 +298,7 @@ class Visitor(GramVisitor):
 
     # Visit a parse tree produced by GramParser#code.
     def visitCode(self, ctx: GramParser.CodeContext):
-        return ctx.value()
+        return ctx.getText().strip('{{').strip('}}')
 
     # Visit a parse tree produced by GramParser#par.
     def visitPar(self, ctx: GramParser.ParContext):

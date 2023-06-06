@@ -1,0 +1,5 @@
+p = <Hello>|<World>;
+print(p);
+
+print(p.get_vertices());
+print(p.get_vertices().map(x=>{{x*2}}));

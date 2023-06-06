@@ -23,3 +23,6 @@ def test_grammar_check():
 def test_dot():
     r = convert_to_dot("f=5;r=load('somefile');g=load('someotherfile');print(g|r);")
     assert r.to_string() != ""
+
+def test_interpreter():
+    pass
