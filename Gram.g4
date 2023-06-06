@@ -8,7 +8,7 @@ expr:
     |   id '.' operator '(' expr? ')'       #op
     |   'print' '(' expr ')'                #print
     |   expr '.' 'map' '(' lambda ')'       #map
-    |   'load' '(' PATH ')'                 #load
+    |   'load' '(' v ')'                    #load
     |   expr '&' expr                       #intersect
     |   expr ':' expr                       #concat
     |   expr '|' expr                       #union
@@ -50,4 +50,3 @@ INT     : [0-9]+ ;
 
 SEMICOLON: ';';
 EQ: '=';
-PATH: '\'' (.)+? '\'';
