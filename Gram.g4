@@ -12,8 +12,8 @@ expr:
     |   expr '&' expr                       #intersect
     |   expr ':' expr                       #concat
     |   expr '|' expr                       #union
-    |   '*' expr                            #star
-    |   expr '++'                           #move
+    |   expr '*'                            #star
+    |   '<' STRING '>'                      #symb
     |   id                                  #var
     |   v                                   #val
     ;
