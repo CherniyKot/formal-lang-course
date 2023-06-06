@@ -1,13 +1,18 @@
 grammar Gram;
 
-prog:   (expr SEMICOLON)* EOF;
+prog:   (sentence SEMICOLON)* EOF;
+
+sentence:
+                                            #empty
+    |   id EQ expr                          #bind
+    |   'print' '(' expr ')'                #print
+    ;
+
 
 expr:
-                                            #empty
-    |   id EQ (expr)                        #bind
-    |   id '.' operator '(' expr? ')'       #op
-    |   'print' '(' expr ')'                #print
+        expr '.' operator '(' expr? ')'     #op
     |   expr '.' 'map' '(' lambda ')'       #map
+    |   expr '.' 'filter' '(' lambda ')'    #filter
     |   'load' '(' v ')'                    #load
     |   expr '&' expr                       #intersect
     |   expr ':' expr                       #concat
@@ -16,6 +21,7 @@ expr:
     |   '<' STRING '>'                      #symb
     |   id                                  #var
     |   v                                   #val
+    |   '(' expr ')'                        #par
     ;
 
 id      : STRING (INT)*;
@@ -40,9 +46,9 @@ operator:
     |   'get_labels'
     ;
 
-lambda: var=id '=>' code;
+lambda: id '=>' code;
 
-code: '{{' .*? '}}';
+code: '{{' value=.*? '}}';
 
 STRING  : [A-Za-z_]+;
 WS : [ \t\n\r]+ -> skip;
