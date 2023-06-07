@@ -1,58 +1,65 @@
 ## Структура языка описана ниже в формате ANTLR
 
-    grammar Gram;
+      grammar Gram;
 
-    prog:   (expr SEMICOLON)* EOF;
+      prog:   (sentence SEMICOLON)* EOF;
 
-    expr:
-                                                #empty
-        |   id EQ (expr)                        #bind
-        |   id '.' operator '(' expr? ')'       #op
-        |   'print' '(' expr ')'                #print
-        |   expr '.' 'map' '(' lambda ')'       #map
-        |   'load' '(' PATH ')'                 #load
-        |   expr '&' expr                       #intersect
-        |   expr ':' expr                       #concat
-        |   expr '|' expr                       #union
-        |   '*' expr                            #star
-        |   expr '++'                           #move
-        |   id                                  #var
-        |   v                                   #val
-        ;
+      sentence:
+                                                  #empty
+          |   id EQ expr                          #bind
+          |   'print' '(' expr ')'                #print
+          ;
 
-    id      : STRING (INT)*;
+      expr:
+              expr '.' operator '(' expr? ')'     #op
+          |   expr '.' 'map' '(' lambda ')'       #map
+          |   expr '.' 'filter' '(' lambda ')'    #filter
+          |   'load' '(' v ')'                    #load
+          |   expr '&' expr                       #intersect
+          |   expr ':' expr                       #concat
+          |   expr '|' expr                       #union
+          |   expr '*'                            #star
+          |   '<' STRING '>'                      #symb
+          |   id                                  #var
+          |   v                                   #val
+          |   '(' expr ')'                        #par
+          |   'set' '(' expr ')'                  #setExpr
+          |   'list' '(' expr ')'                 #listExpr
+          ;
 
-    v:
-            '\'' value=.*? '\''                 #string
-        |   INT                                 #int
-        |   '[' id* ']'                         #set
-        ;
+      id      : STRING (INT)*;
+
+      v:
+              '\'' .*? '\''                       #string
+          |   INT                                 #int
+          |   '[' (v?| v ( ','v)*) ']'            #list
+          |   '{' (v?| v ( ','v)*) '}'            #set
+          ;
 
 
-    operator:
-            'set_final'
-        |   'set_start'
-        |   'add_start'
-        |   'add_final'
-        |   'get_start'
-        |   'get_final'
-        |   'get_reachable'
-        |   'get_vertices'
-        |   'get_edges'
-        |   'get_labels'
-        ;
+      operator:
+              'set_final'
+          |   'set_start'
+          |   'add_start'
+          |   'add_final'
+          |   'get_start'
+          |   'get_final'
+          |   'get_reachable'
+          |   'get_vertices'
+          |   'get_edges'
+          |   'get_labels'
+          ;
 
-    lambda: var=id '=>' code;
+      lambda: id '=>' CODE;
 
-    code: '{{' .*? '}}';
+      CODE: '{{' .*? '}}';
 
-    STRING  : [A-Za-z_]+;
-    WS : [ \t\n\r]+ -> skip;
-    INT     : [0-9]+ ;
+      STRING  : [A-Za-z_-]+;
+      WS : [ \t\n\r]+ -> skip;
+      INT     : [0-9]+ ;
 
-    SEMICOLON: ';';
-    EQ: '=';
-    PATH: [-a-zA-Z0-9@:%._+~#=]{1,256}'.'[a-zA-Z0-9()]{1,6} '\b' ([-a-zA-Z0-9()@:%_+.~#?&/=]*) ;
+      SEMICOLON: ';';
+      EQ: '=';
 
 ### Примеры кода:
 1. Загружает граф и выводит его ноды и ребра
@@ -66,3 +73,42 @@
         g2=load('vk.com/graph');
         g = g1 & g2;
         print(g);
+3. Другие примеры можно найти в файлах в папке "test_files"
+
+### Система типов:
+В данном языке есть следующие типы:
+1. Строка
+2. Число
+3. Список
+4. Множество
+5. Граф
+
+Граф "под капотом" хранится как конечный автомат
+(pyformlang.finite_automaton.EpsilonNFA).
+Прочие типы хранятся "как есть".
+При загрузке графа из внешнего источника по умолчанию все его
+вершины помечаются как стартовые и финальные.
+
+Списки и множества свободно преобразуемы друг в друга с помощью
+соответствующих конструкций языка.
+Вершины, метки и грани графов представляют собой множества,
+получаются и устанавливаются соответствующим типом.
+
+Операции объединения и пересечения оперделены для графов и множеств.
+Операция конкатенации определена для графов, списков и строк.
+Операция замыкания Клини определена для графов.
+
+При нарушении условий типизации будет выведено соответствующее сообщение об ошибке.
+
+### Ввод и вывод
+Ввод новых графов производится с помощью команды load, при
+этом производится загрузкасоответствующего графа из датасета **cfpq_data**.
+Вывод графов происходит в формате pydot. Прочие типы выводятся в
+представлении Python3.
+
+### Лямбды
+Для итерируемых объектов (списков, множеств, т.д.) определены
+операции map и filter.
+Как аргумент они принимают лямбду в заданном формате.
+Обратите внимание, что код лямбды должен быть написан на языке Python3,
+а так же имеет доступ к значениям переменных в основном коде.

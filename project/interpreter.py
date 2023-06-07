@@ -2,8 +2,8 @@ import networkx as nx
 from pyformlang.finite_automaton import *
 from pyformlang.regular_expression import *
 
-import project.graph_utils as gu
 import project.finite_automata_utils as fau
+import project.graph_utils as gu
 from gen.GramParser import GramParser
 from gen.GramVisitor import GramVisitor
 
@@ -23,7 +23,7 @@ class Visitor(GramVisitor):
         if expr_ctx is None:
             return None
         expr_r = expr_ctx.accept(self)
-        if isinstance(expr_r, Visitor.ID) and  expr_r.value in self.vars:
+        if isinstance(expr_r, Visitor.ID) and expr_r.value in self.vars:
             return self.vars[expr_r.value]
         else:
             return expr_r
@@ -31,7 +31,7 @@ class Visitor(GramVisitor):
     @staticmethod
     def isIterable(obj):
         try:
-            t=iter(obj)
+            t = iter(obj)
             return True
         except TypeError:
             return False
@@ -52,66 +52,74 @@ class Visitor(GramVisitor):
         op = op_c.accept(self)
 
         if not isinstance(expr1_r, EpsilonNFA):
-            raise Exception(f"Type {type(expr1_r)} is not valid for \"{op}\" operation")
+            raise Exception(f'Type {type(expr1_r)} is not valid for "{op}" operation')
 
-        if op == 'set_final':
+        if op == "set_final":
             if not isinstance(expr2_r, set):
-                raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
-            expr1_r=expr1_r.copy()
+                raise Exception(
+                    f'Type {type(expr2_r)} is not valid for "{op}" operation'
+                )
+            expr1_r = expr1_r.copy()
             expr1_r.final_states.clear()
             expr1_r.final_states.update(expr2_r)
 
-        elif op == 'set_start':
+        elif op == "set_start":
             if not isinstance(expr2_r, set):
-                raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
+                raise Exception(
+                    f'Type {type(expr2_r)} is not valid for "{op}" operation'
+                )
             expr1_r = expr1_r.copy()
             expr1_r.start_states.clear()
             expr1_r.start_states.update(expr2_r)
 
-        elif op == 'add_start':
+        elif op == "add_start":
             if not isinstance(expr2_r, set):
-                raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
+                raise Exception(
+                    f'Type {type(expr2_r)} is not valid for "{op}" operation'
+                )
             expr1_r = expr1_r.copy()
             expr1_r.start_states.update(expr2_r)
 
-        elif op == 'add_final':
+        elif op == "add_final":
             if not isinstance(expr2_r, set):
-                raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
+                raise Exception(
+                    f'Type {type(expr2_r)} is not valid for "{op}" operation'
+                )
             expr1_r = expr1_r.copy()
             expr1_r.final_states.update(expr2_r)
 
-        elif op == 'get_start':
+        elif op == "get_start":
             if expr2_r is not None:
-                raise Exception(f"No argument is needed in \"{op}\" operation")
+                raise Exception(f'No argument is needed in "{op}" operation')
             return set(expr1_r.start_states)
 
-        elif op == 'get_final':
+        elif op == "get_final":
             if expr2_r is not None:
-                raise Exception(f"No argument is needed in \"{op}\" operation")
+                raise Exception(f'No argument is needed in "{op}" operation')
             return set(expr1_r.final_states)
 
-        elif op == 'get_reachable':
+        elif op == "get_reachable":
             if expr2_r is not None:
-                raise Exception(f"No argument is needed in \"{op}\" operation")
+                raise Exception(f'No argument is needed in "{op}" operation')
 
-            #TODO?
-            t: nx.MultiDiGraph = nx.transitive_closure(nx.DiGraph(expr1_r.to_networkx()))
+            t: nx.MultiDiGraph = nx.transitive_closure(
+                nx.DiGraph(expr1_r.to_networkx())
+            )
             return t.edges
-            # return fau.query_EpsilonNFA(expr1_r.)
 
-        elif op == 'get_vertices':
+        elif op == "get_vertices":
             if expr2_r is not None:
-                raise Exception(f"No argument is needed in \"{op}\" operation")
+                raise Exception(f'No argument is needed in "{op}" operation')
             return set(expr1_r.states)
 
-        elif op == 'get_edges':
+        elif op == "get_edges":
             if expr2_r is not None:
-                raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(expr1_r._transition_function.get_edges())
+                raise Exception(f'No argument is needed in "{op}" operation')
+            return set(expr1_r)
 
-        elif op == 'get_labels':
+        elif op == "get_labels":
             if expr2_r is not None:
-                raise Exception(f"No argument is needed in \"{op}\" operation")
+                raise Exception(f'No argument is needed in "{op}" operation')
             return set(expr1_r.symbols)
 
         else:
@@ -130,7 +138,9 @@ class Visitor(GramVisitor):
         elif isinstance(g1, set) and isinstance(g2, set):
             return g1 & g2
         else:
-            raise Exception(f"Types {type(g1)} and {type(g2)} are not valid for intersect operation")
+            raise Exception(
+                f"Types {type(g1)} and {type(g2)} are not valid for intersect operation"
+            )
 
     # Visit a parse tree produced by GramParser#concat.
     def visitConcat(self, ctx: GramParser.ConcatContext):
@@ -140,10 +150,14 @@ class Visitor(GramVisitor):
 
         if isinstance(g1, EpsilonNFA) and isinstance(g2, EpsilonNFA):
             return g1.concatenate(g2)
-        elif isinstance(g1,list)and isinstance(g2,list):
-            return g1+g2
+        elif isinstance(g1, list) and isinstance(g2, list):
+            return g1 + g2
+        elif isinstance(g1, str) and isinstance(g2, str):
+            return g1 + g2
         else:
-            raise Exception(f"Types {type(g1)} and {type(g2)} are not valid for concat operation")
+            raise Exception(
+                f"Types {type(g1)} and {type(g2)} are not valid for concat operation"
+            )
 
     # Visit a parse tree produced by GramParser#union.
     def visitUnion(self, ctx: GramParser.UnionContext):
@@ -156,7 +170,9 @@ class Visitor(GramVisitor):
         elif isinstance(g1, set) and isinstance(g2, set):
             return g1 | g2
         else:
-            raise Exception(f"Types {type(g1)} and {type(g2)} are not valid for union operation")
+            raise Exception(
+                f"Types {type(g1)} and {type(g2)} are not valid for union operation"
+            )
 
     # Visit a parse tree produced by GramParser#star.
     def visitStar(self, ctx: GramParser.StarContext):
@@ -210,9 +226,9 @@ class Visitor(GramVisitor):
         if Visitor.isIterable(expr_res):
             s = expr_res
         elif isinstance(expr_res, Visitor.ID):
-            raise Exception(f"Var \"{id}\" is not found")
+            raise Exception(f'Var "{id}" is not found')
         else:
-            raise Exception(f"\"{type(expr_res)}\" is not a valid type for map")
+            raise Exception(f'"{type(expr_res)}" is not a valid type for map')
 
         lam: callable = lambda_c.accept(self)
 
@@ -228,15 +244,16 @@ class Visitor(GramVisitor):
         if Visitor.isIterable(expr_res):
             s = expr_res
         elif isinstance(expr_res, Visitor.ID):
-            raise Exception(f"Var \"{id}\" is not found")
+            raise Exception(f'Var "{id}" is not found')
         else:
-            raise Exception(f"\"{type(expr_res)}\" is not a valid type for filter")
+            raise Exception(f'"{type(expr_res)}" is not a valid type for filter')
 
         lam: callable = lambda_c.accept(self)
 
         result = []
         for flag, val in zip(lam(s), s):
-            if flag: result.append(val)
+            if flag:
+                result.append(val)
         return result
 
     # Visit a parse tree produced by GramParser#lambda.
@@ -245,14 +262,14 @@ class Visitor(GramVisitor):
         code_c = ctx.CODE()
 
         id = id_c.accept(self)
-        code = code_c.getText().strip('{{').strip('}}')
+        code = code_c.getText().strip("{{").strip("}}")
 
         def func(s):
             result = list()
             for i in s:
                 context = dict()
-                exec(f'result = (lambda {id.value}:{code})({i})', self.vars, context)
-                result.append(context['result'])
+                exec(f"result = (lambda {id.value}:{code})({i})", self.vars, context)
+                result.append(context["result"])
             return result
 
         return func
@@ -278,9 +295,8 @@ class Visitor(GramVisitor):
             result.add(c.accept(self))
         return result
 
-
     # Visit a parse tree produced by GramParser#list.
-    def visitList(self, ctx:GramParser.ListContext):
+    def visitList(self, ctx: GramParser.ListContext):
         v_c = ctx.v()
 
         result = list()
@@ -297,29 +313,29 @@ class Visitor(GramVisitor):
         return ctx.expr().accept(self)
 
     # Visit a parse tree produced by GramParser#setExpr.
-    def visitSetExpr(self, ctx:GramParser.SetExprContext):
-        expr_c:GramParser.ExprContext = ctx.expr()
+    def visitSetExpr(self, ctx: GramParser.SetExprContext):
+        expr_c: GramParser.ExprContext = ctx.expr()
         expr_r = self.extractExprResult(expr_c)
 
         if isinstance(expr_r, Visitor.ID):
-            raise Exception(f"Var \"{expr_r.value}\" is not found")
+            raise Exception(f'Var "{expr_r.value}" is not found')
 
         if Visitor.isIterable(expr_r):
             # noinspection PyTypeChecker
             return set(expr_r)
         else:
-            raise Exception(f"\"{type(expr_r)}\" can not be converted to set")
+            raise Exception(f'"{type(expr_r)}" can not be converted to set')
 
     # Visit a parse tree produced by GramParser#listExpr.
-    def visitListExpr(self, ctx:GramParser.ListExprContext):
+    def visitListExpr(self, ctx: GramParser.ListExprContext):
         expr_c: GramParser.ExprContext = ctx.expr()
         expr_r = self.extractExprResult(expr_c)
 
         if isinstance(expr_r, Visitor.ID):
-            raise Exception(f"Var \"{expr_r.value}\" is not found")
+            raise Exception(f'Var "{expr_r.value}" is not found')
 
         if Visitor.isIterable(expr_r):
             # noinspection PyTypeChecker
             return list(expr_r)
         else:
-            raise Exception(f"\"{type(expr_r)}\" can not be converted to list")
+            raise Exception(f'"{type(expr_r)}" can not be converted to list')

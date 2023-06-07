@@ -1,3 +1,0 @@
-print(<a>);
-print(<a>*);
-print(<a>*.get_reachable());
