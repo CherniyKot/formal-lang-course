@@ -25,22 +25,24 @@ def test_dot_1():
     nodes = r.get_nodes()
     edges = r.get_edges()
 
-    assert len(list(filter(lambda x: x.get('label') == 'sentence', nodes))) == 4
-    assert len(list(filter(lambda x: x.get('label') == 'expr', nodes))) == 6
-    assert len(list(filter(lambda x: x.get('label') == 'id', nodes))) == 5
+    assert len(list(filter(lambda x: x.get("label") == "sentence", nodes))) == 4
+    assert len(list(filter(lambda x: x.get("label") == "expr", nodes))) == 6
+    assert len(list(filter(lambda x: x.get("label") == "id", nodes))) == 5
     assert len(nodes) == 19
     assert len(edges) == 18
 
 
 def test_dot_2():
-    r = convert_to_dot("p = <Hello>|<World>;print(p.get_vertices().map(y=>{{y in p.states}}));")
+    r = convert_to_dot(
+        "p = <Hello>|<World>;print(p.get_vertices().map(y=>{{y in p.states}}));"
+    )
     assert r.to_string() != ""
 
     nodes = r.get_nodes()
     edges = r.get_edges()
 
-    assert len(list(filter(lambda x: x.get('label') == 'sentence', nodes))) == 2
-    assert len(list(filter(lambda x: x.get('label') == 'expr', nodes))) == 6
-    assert len(list(filter(lambda x: x.get('label') == 'lambda', nodes))) == 1
+    assert len(list(filter(lambda x: x.get("label") == "sentence", nodes))) == 2
+    assert len(list(filter(lambda x: x.get("label") == "expr", nodes))) == 6
+    assert len(list(filter(lambda x: x.get("label") == "lambda", nodes))) == 1
     assert len(nodes) == 14
     assert len(edges) == 13
