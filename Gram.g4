@@ -45,9 +45,9 @@ operator:
     |   'get_labels'
     ;
 
-lambda: id '=>' code;
+lambda: id '=>' CODE;
 
-code: '{{' value=.*? '}}';
+CODE: '{{' .*? '}}';
 
 STRING  : [A-Za-z_]+;
 WS : [ \t\n\r]+ -> skip;

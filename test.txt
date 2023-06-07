@@ -3,3 +3,4 @@ print(p);
 
 print(p.get_vertices());
 print(p.get_vertices().map(x=>{{x*2}}));
+print(p.get_vertices().map(y=>{{y in p.nodes}})

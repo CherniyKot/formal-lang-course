@@ -1,14 +1,10 @@
 import networkx as nx
-from antlr4 import *
-
 from pyformlang.finite_automaton import *
 from pyformlang.regular_expression import *
 
-import project.cfg_utils
-from gen.GramLexer import GramLexer
+import project.graph_utils as gu
 from gen.GramParser import GramParser
 from gen.GramVisitor import GramVisitor
-import project.graph_utils as gu
 
 
 # import finite_automata_utils as fau
@@ -249,20 +245,17 @@ class Visitor(GramVisitor):
     # Visit a parse tree produced by GramParser#lambda.
     def visitLambda(self, ctx: GramParser.LambdaContext):
         id_c: GramParser.IdContext = ctx.id_()
-        code_c: GramParser.CodeContext = ctx.code()
+        code_c = ctx.CODE()
 
         id = id_c.accept(self)
-        code = code_c.accept(self)
+        code = code_c.getText().strip('{{').strip('}}')
 
         def func(s: set):
             result = list()
             for i in s:
-                r = None
-                #TODO
-                print(f'r = (lambda {id.value}:{code})({i})')
-                exec(f'r = (lambda {id.value}:{code})({i})', self.vars, {'r':r})
-                print(r)
-                result.append(r)
+                context = dict()
+                exec(f'result = (lambda {id.value}:{code})({i})', self.vars, context)
+                result.append(context['result'])
             return result
 
         return func
@@ -295,10 +288,6 @@ class Visitor(GramVisitor):
     # Visit a parse tree produced by GramParser#operator.
     def visitOperator(self, ctx: GramParser.OperatorContext):
         return ctx.getText()
-
-    # Visit a parse tree produced by GramParser#code.
-    def visitCode(self, ctx: GramParser.CodeContext):
-        return ctx.getText().strip('{{').strip('}}')
 
     # Visit a parse tree produced by GramParser#par.
     def visitPar(self, ctx: GramParser.ParContext):
