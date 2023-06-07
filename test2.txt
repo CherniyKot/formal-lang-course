@@ -1,0 +1,5 @@
+print(<hello>:<world>);
+print('--------------------------------');
+print((<hello>:<world>));
+print(t.get_labels());
+print((<hello>:<world>).get_labels());

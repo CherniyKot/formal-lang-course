@@ -22,13 +22,13 @@ expr:
     |   v                                   #val
     |   '(' expr ')'                        #par
     |   'set' '(' expr ')'                  #setExpr
-    |   'list' '(' expr ')'                  #listExpr
+    |   'list' '(' expr ')'                 #listExpr
     ;
 
 id      : STRING (INT)*;
 
 v:
-        '\'' .*? '\''                 #string
+        '\'' .*? '\''                       #string
     |   INT                                 #int
     |   '[' (v?| v ( ','v)*) ']'            #list
     |   '{' (v?| v ( ','v)*) '}'            #set

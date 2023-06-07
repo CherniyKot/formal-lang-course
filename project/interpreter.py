@@ -96,10 +96,7 @@ class Visitor(GramVisitor):
 
             #TODO?
             t: nx.MultiDiGraph = nx.transitive_closure(nx.DiGraph(expr1_r.to_networkx()))
-            result = set()
-            for e in t.edges:
-                result.add((e[0], e[1]))
-            return result
+            return t.edges
             # return fau.query_EpsilonNFA(expr1_r.)
 
         elif op == 'get_vertices':
@@ -110,7 +107,7 @@ class Visitor(GramVisitor):
         elif op == 'get_edges':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(expr1_r.states)
+            return set(expr1_r._transition_function.get_edges())
 
         elif op == 'get_labels':
             if expr2_r is not None:
@@ -270,7 +267,7 @@ class Visitor(GramVisitor):
 
     # Visit a parse tree produced by GramParser#int.
     def visitInt(self, ctx: GramParser.IntContext):
-        return int(ctx.INT())
+        return int(ctx.INT().getText())
 
     # Visit a parse tree produced by GramParser#set.
     def visitSet(self, ctx: GramParser.SetContext):
@@ -297,7 +294,7 @@ class Visitor(GramVisitor):
 
     # Visit a parse tree produced by GramParser#par.
     def visitPar(self, ctx: GramParser.ParContext):
-        return self.visitChildren(ctx.expr())
+        return ctx.expr().accept(self)
 
     # Visit a parse tree produced by GramParser#setExpr.
     def visitSetExpr(self, ctx:GramParser.SetExprContext):
