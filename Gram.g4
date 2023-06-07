@@ -21,6 +21,8 @@ expr:
     |   id                                  #var
     |   v                                   #val
     |   '(' expr ')'                        #par
+    |   'set' '(' expr ')'                  #setExpr
+    |   'list' '(' expr ')'                  #listExpr
     ;
 
 id      : STRING (INT)*;
@@ -28,7 +30,8 @@ id      : STRING (INT)*;
 v:
         '\'' value=.*? '\''                 #string
     |   INT                                 #int
-    |   '[' (v?| v ( ','v)*) ']'            #set
+    |   '[' (v?| v ( ','v)*) ']'            #list
+    |   '{' (v?| v ( ','v)*) '}'            #set
     ;
 
 

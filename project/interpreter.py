@@ -22,13 +22,18 @@ class Visitor(GramVisitor):
         if expr_ctx is None:
             return None
         expr_r = expr_ctx.accept(self)
-        if isinstance(expr_r, Visitor.ID):
-            if expr_r.value in self.vars:
-                return self.vars[expr_r.value]
-            else:
-                return expr_r
+        if isinstance(expr_r, Visitor.ID) and  expr_r.value in self.vars:
+            return self.vars[expr_r.value]
         else:
             return expr_r
+
+    @staticmethod
+    def isIterable(obj):
+        try:
+            t=iter(obj)
+            return True
+        except TypeError:
+            return False
 
     # Visit a parse tree produced by GramParser#op.
     def visitOp(self, ctx: GramParser.OpContext):
@@ -193,54 +198,40 @@ class Visitor(GramVisitor):
         expr_c: GramParser.ExprContext = ctx.expr()
         lambda_c: GramParser.LambdaContext = ctx.lambda_()
 
-        expr_res = expr_c.accept(self)
+        expr_res = self.extractExprResult(expr_c)
 
-        if isinstance(expr_res, set):
+        if Visitor.isIterable(expr_res):
             s = expr_res
         elif isinstance(expr_res, Visitor.ID):
-            id = expr_res.value
-            if id not in self.vars:
-                raise Exception(f"Var \"{id}\" is not found")
-
-            s = self.vars[id]
-
-            if not isinstance(s, set):
-                raise Exception(f"\"{type(s)}\" is not a valid type for map")
+            raise Exception(f"Var \"{id}\" is not found")
         else:
             raise Exception(f"\"{type(expr_res)}\" is not a valid type for map")
 
         lam: callable = lambda_c.accept(self)
 
-        return set(lam(s))
+        return lam(s)
 
     # Visit a parse tree produced by GramParser#filter.
     def visitFilter(self, ctx: GramParser.FilterContext):
         expr_c: GramParser.ExprContext = ctx.expr()
         lambda_c: GramParser.LambdaContext = ctx.lambda_()
 
-        expr_res = expr_c.accept(self)
+        expr_res = self.extractExprResult(expr_c)
 
-        if isinstance(expr_res, set):
+        if Visitor.isIterable(expr_res):
             s = expr_res
         elif isinstance(expr_res, Visitor.ID):
-            id = expr_res.value
-            if id not in self.vars:
-                raise Exception(f"Var \"{id}\" is not found")
-
-            s = self.vars[id]
-
-            if not isinstance(s, set):
-                raise Exception(f"\"{type(s)}\" is not a valid type for map")
+            raise Exception(f"Var \"{id}\" is not found")
         else:
-            raise Exception(f"\"{type(expr_res)}\" is not a valid type for map")
+            raise Exception(f"\"{type(expr_res)}\" is not a valid type for filter")
 
         lam: callable = lambda_c.accept(self)
 
-        r = list(s)
+        r = s
         result = []
         for flag, val in zip(lam(s), r):
             if flag: r.append(val)
-        return set(result)
+        return result
 
     # Visit a parse tree produced by GramParser#lambda.
     def visitLambda(self, ctx: GramParser.LambdaContext):
@@ -250,7 +241,7 @@ class Visitor(GramVisitor):
         id = id_c.accept(self)
         code = code_c.getText().strip('{{').strip('}}')
 
-        def func(s: set):
+        def func(s):
             result = list()
             for i in s:
                 context = dict()
@@ -275,15 +266,21 @@ class Visitor(GramVisitor):
     # Visit a parse tree produced by GramParser#set.
     def visitSet(self, ctx: GramParser.SetContext):
         v_c = ctx.v()
-        if isinstance(v_c, list):
-            result = set()
-            for c in v_c:
-                result.add(c.accept(self))
-            return result
-        elif v_c is GramParser.VContext:
-            return {v_c.accept(self)}
-        else:
-            return set()
+
+        result = set()
+        for c in v_c:
+            result.add(c.accept(self))
+        return result
+
+
+    # Visit a parse tree produced by GramParser#list.
+    def visitList(self, ctx:GramParser.ListContext):
+        v_c = ctx.v()
+
+        result = list()
+        for c in v_c:
+            result.append(c.accept(self))
+        return result
 
     # Visit a parse tree produced by GramParser#operator.
     def visitOperator(self, ctx: GramParser.OperatorContext):
@@ -292,3 +289,31 @@ class Visitor(GramVisitor):
     # Visit a parse tree produced by GramParser#par.
     def visitPar(self, ctx: GramParser.ParContext):
         return self.visitChildren(ctx.expr())
+
+    # Visit a parse tree produced by GramParser#setExpr.
+    def visitSetExpr(self, ctx:GramParser.SetExprContext):
+        expr_c:GramParser.ExprContext = ctx.expr()
+        expr_r = self.extractExprResult(expr_c)
+
+        if isinstance(expr_r, Visitor.ID):
+            raise Exception(f"Var \"{expr_r.value}\" is not found")
+
+        if Visitor.isIterable(expr_r):
+            # noinspection PyTypeChecker
+            return set(expr_r)
+        else:
+            raise Exception(f"\"{type(expr_r)}\" can not be converted to set")
+
+    # Visit a parse tree produced by GramParser#listExpr.
+    def visitListExpr(self, ctx:GramParser.ListExprContext):
+        expr_c: GramParser.ExprContext = ctx.expr()
+        expr_r = self.extractExprResult(expr_c)
+
+        if isinstance(expr_r, Visitor.ID):
+            raise Exception(f"Var \"{expr_r.value}\" is not found")
+
+        if Visitor.isIterable(expr_r):
+            # noinspection PyTypeChecker
+            return list(expr_r)
+        else:
+            raise Exception(f"\"{type(expr_r)}\" can not be converted to list")
