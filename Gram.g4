@@ -28,7 +28,7 @@ expr:
 id      : STRING (INT)*;
 
 v:
-        '\'' value=.*? '\''                 #string
+        '\'' .*? '\''                 #string
     |   INT                                 #int
     |   '[' (v?| v ( ','v)*) ']'            #list
     |   '{' (v?| v ( ','v)*) '}'            #set
@@ -52,7 +52,7 @@ lambda: id '=>' CODE;
 
 CODE: '{{' .*? '}}';
 
-STRING  : [A-Za-z_]+;
+STRING  : [A-Za-z_-]+;
 WS : [ \t\n\r]+ -> skip;
 INT     : [0-9]+ ;
 

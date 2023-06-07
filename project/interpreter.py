@@ -3,6 +3,7 @@ from pyformlang.finite_automaton import *
 from pyformlang.regular_expression import *
 
 import project.graph_utils as gu
+import project.finite_automata_utils as fau
 from gen.GramParser import GramParser
 from gen.GramVisitor import GramVisitor
 
@@ -50,69 +51,76 @@ class Visitor(GramVisitor):
 
         op = op_c.accept(self)
 
-        if not isinstance(expr1_r, nx.MultiDiGraph):
+        if not isinstance(expr1_r, EpsilonNFA):
             raise Exception(f"Type {type(expr1_r)} is not valid for \"{op}\" operation")
-
-        result = EpsilonNFA.from_networkx(expr1_r)
 
         if op == 'set_final':
             if not isinstance(expr2_r, set):
                 raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
-            result.final_states.clear()
-            result.final_states.update(expr2_r)
+            expr1_r=expr1_r.copy()
+            expr1_r.final_states.clear()
+            expr1_r.final_states.update(expr2_r)
 
         elif op == 'set_start':
             if not isinstance(expr2_r, set):
                 raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
-            result.start_states.clear()
-            result.start_states.update(expr2_r)
+            expr1_r = expr1_r.copy()
+            expr1_r.start_states.clear()
+            expr1_r.start_states.update(expr2_r)
 
         elif op == 'add_start':
             if not isinstance(expr2_r, set):
                 raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
-            result.start_states.update(expr2_r)
+            expr1_r = expr1_r.copy()
+            expr1_r.start_states.update(expr2_r)
 
         elif op == 'add_final':
             if not isinstance(expr2_r, set):
                 raise Exception(f"Type {type(expr2_r)} is not valid for \"{op}\" operation")
-            result.final_states.update(expr2_r)
+            expr1_r = expr1_r.copy()
+            expr1_r.final_states.update(expr2_r)
 
         elif op == 'get_start':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(result.start_states)
+            return set(expr1_r.start_states)
 
         elif op == 'get_final':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(result.final_states)
+            return set(expr1_r.final_states)
 
         elif op == 'get_reachable':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            t: nx.MultiDiGraph = nx.transitive_closure(expr1_r)
+
+            #TODO?
+            t: nx.MultiDiGraph = nx.transitive_closure(nx.DiGraph(expr1_r.to_networkx()))
             result = set()
             for e in t.edges:
                 result.add((e[0], e[1]))
             return result
+            # return fau.query_EpsilonNFA(expr1_r.)
 
         elif op == 'get_vertices':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(expr1_r.nodes)
+            return set(expr1_r.states)
 
         elif op == 'get_edges':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(expr1_r.edges)
+            return set(expr1_r.states)
 
         elif op == 'get_labels':
             if expr2_r is not None:
                 raise Exception(f"No argument is needed in \"{op}\" operation")
-            return set(expr1_r.nodes.data('label'))
+            return set(expr1_r.symbols)
 
         else:
             raise Exception("You should not be here")
+
+        return expr1_r
 
     # Visit a parse tree produced by GramParser#intersect.
     def visitIntersect(self, ctx: GramParser.IntersectContext):
@@ -120,8 +128,8 @@ class Visitor(GramVisitor):
         g1 = self.extractExprResult(expr1_c)
         g2 = self.extractExprResult(expr2_c)
 
-        if isinstance(g1, nx.MultiDiGraph) and isinstance(g2, nx.MultiDiGraph):
-            return nx.intersection(g1, g2)
+        if isinstance(g1, EpsilonNFA) and isinstance(g2, EpsilonNFA):
+            return g1.get_intersection(g2)
         elif isinstance(g1, set) and isinstance(g2, set):
             return g1 & g2
         else:
@@ -133,8 +141,10 @@ class Visitor(GramVisitor):
         g1 = self.extractExprResult(expr1_c)
         g2 = self.extractExprResult(expr2_c)
 
-        if isinstance(g1, nx.MultiDiGraph) and isinstance(g2, nx.MultiDiGraph):
-            return EpsilonNFA.from_networkx(g1).concatenate(EpsilonNFA.from_networkx(g2)).to_networkx()
+        if isinstance(g1, EpsilonNFA) and isinstance(g2, EpsilonNFA):
+            return g1.concatenate(g2)
+        elif isinstance(g1,list)and isinstance(g2,list):
+            return g1+g2
         else:
             raise Exception(f"Types {type(g1)} and {type(g2)} are not valid for concat operation")
 
@@ -144,8 +154,8 @@ class Visitor(GramVisitor):
         g1 = self.extractExprResult(expr1_c)
         g2 = self.extractExprResult(expr2_c)
 
-        if isinstance(g1, nx.MultiDiGraph) and isinstance(g2, nx.MultiDiGraph):
-            return nx.disjoint_union(g1, g2)
+        if isinstance(g1, EpsilonNFA) and isinstance(g2, EpsilonNFA):
+            return g1.union(g2)
         elif isinstance(g1, set) and isinstance(g2, set):
             return g1 | g2
         else:
@@ -156,10 +166,10 @@ class Visitor(GramVisitor):
         expr_c = ctx.expr()
         g = self.extractExprResult(expr_c)
 
-        if not isinstance(g, nx.MultiDiGraph):
+        if not isinstance(g, EpsilonNFA):
             raise Exception(f"Type {type(g)} is not valid for star operation")
 
-        return EpsilonNFA.from_networkx(g).kleene_star().to_networkx()
+        return g.kleene_star()
 
     # Visit a parse tree produced by GramParser#var.
     def visitVar(self, ctx: GramParser.VarContext):
@@ -170,15 +180,15 @@ class Visitor(GramVisitor):
         str_c = ctx.STRING()
         symb = str_c.getText()
         result: EpsilonNFA = Regex(symb).to_epsilon_nfa()
-        return result.to_networkx()
+        return result
 
     # Visit a parse tree produced by GramParser#print.
     def visitPrint(self, ctx: GramParser.PrintContext):
         expr_c: GramParser.ExprContext = ctx.expr()
         expr_r = self.extractExprResult(expr_c)
 
-        if isinstance(expr_r, nx.MultiDiGraph):
-            print(nx.nx_pydot.to_pydot(expr_r).to_string())
+        if isinstance(expr_r, EpsilonNFA):
+            print(nx.nx_pydot.to_pydot(expr_r.to_networkx()).to_string())
         else:
             print(expr_r)
 
@@ -191,7 +201,7 @@ class Visitor(GramVisitor):
     # Visit a parse tree produced by GramParser#load.
     def visitLoad(self, ctx: GramParser.LoadContext):
         path_c: GramParser.StringContext = ctx.v()
-        return gu.get_graph(path_c.accept(self))
+        return fau.build_NDFA_from_graph(gu.get_graph(path_c.accept(self)))
 
     # Visit a parse tree produced by GramParser#map.
     def visitMap(self, ctx: GramParser.MapContext):
@@ -227,10 +237,9 @@ class Visitor(GramVisitor):
 
         lam: callable = lambda_c.accept(self)
 
-        r = s
         result = []
-        for flag, val in zip(lam(s), r):
-            if flag: r.append(val)
+        for flag, val in zip(lam(s), s):
+            if flag: result.append(val)
         return result
 
     # Visit a parse tree produced by GramParser#lambda.
@@ -257,7 +266,7 @@ class Visitor(GramVisitor):
 
     # Visit a parse tree produced by GramParser#string.
     def visitString(self, ctx: GramParser.StringContext):
-        return str(ctx.value())
+        return ctx.getText()[1:-1]
 
     # Visit a parse tree produced by GramParser#int.
     def visitInt(self, ctx: GramParser.IntContext):
