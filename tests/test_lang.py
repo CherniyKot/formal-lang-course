@@ -20,6 +20,7 @@ def test_grammar_check():
 
 def test_dot_1():
     r = convert_to_dot("f=5;r=load('somefile');g=load('someotherfile');print(g|r);")
+    print(r.to_string())
     assert r.to_string() != ""
 
     nodes = r.get_nodes()
@@ -36,6 +37,7 @@ def test_dot_2():
     r = convert_to_dot(
         "p = <Hello>|<World>;print(p.get_vertices().map(y=>{{y in p.states}}));"
     )
+    print(r.to_string())
     assert r.to_string() != ""
 
     nodes = r.get_nodes()
