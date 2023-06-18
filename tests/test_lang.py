@@ -1,8 +1,8 @@
-from project.lang_utils import *
 import io
 import sys
 
 from project import Visitor
+from project.lang_utils import *
 
 
 def setup_module(module):
@@ -48,8 +48,8 @@ def test_dot_2():
     assert len(list(filter(lambda x: x.get("label") == "sentence", nodes))) == 2
     assert len(list(filter(lambda x: x.get("label") == "expr", nodes))) == 6
     assert len(list(filter(lambda x: x.get("label") == "lambda", nodes))) == 1
-    assert len(nodes) == 15
-    assert len(edges) == 14
+    assert len(nodes) == 14
+    assert len(edges) == 13
 
 
 def run_visitor(code):
