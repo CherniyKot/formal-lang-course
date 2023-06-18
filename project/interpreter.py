@@ -226,7 +226,7 @@ class Visitor(GramVisitor):
         if Visitor.isIterable(expr_res):
             s = expr_res
         elif isinstance(expr_res, Visitor.ID):
-            raise Exception(f'Var "{id}" is not found')
+            raise Exception(f'Var "{expr_res.value}" is not found')
         else:
             raise Exception(f'"{type(expr_res)}" is not a valid type for map')
 
@@ -244,7 +244,7 @@ class Visitor(GramVisitor):
         if Visitor.isIterable(expr_res):
             s = expr_res
         elif isinstance(expr_res, Visitor.ID):
-            raise Exception(f'Var "{id}" is not found')
+            raise Exception(f'Var "{expr_res.value}" is not found')
         else:
             raise Exception(f'"{type(expr_res)}" is not a valid type for filter')
 
@@ -268,8 +268,9 @@ class Visitor(GramVisitor):
             result = list()
             for i in s:
                 context = dict()
-                exec(f"result = (lambda {id.value}:{code})({i})", self.vars, context)
-                result.append(context["result"])
+                context['__param__'] = i
+                exec(f"__result__ = (lambda {id.value}:{code})(__param__)", self.vars, context)
+                result.append(context["__result__"])
             return result
 
         return func
