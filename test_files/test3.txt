@@ -1,0 +1,5 @@
+print(<a>);
+print(<a>*);
+print(<a>*.get_reachable());
+a=<a>|<b>;
+print(a.map(x=>{{x}});

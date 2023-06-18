@@ -8,7 +8,6 @@ sentence:
     |   'print' '(' expr ')'                #print
     ;
 
-
 expr:
         expr '.' operator '(' expr? ')'     #op
     |   expr '.' 'map' '(' lambda ')'       #map
@@ -22,14 +21,17 @@ expr:
     |   id                                  #var
     |   v                                   #val
     |   '(' expr ')'                        #par
+    |   'set' '(' expr ')'                  #setExpr
+    |   'list' '(' expr ')'                 #listExpr
     ;
 
 id      : STRING (INT)*;
 
 v:
-        '\'' value=.*? '\''                 #string
+        '\'' .*? '\''                       #string
     |   INT                                 #int
-    |   '[' (v?| v ( ','v)*) ']'            #set
+    |   '[' (v?| v ( ','v)*) ']'            #list
+    |   '{' (v?| v ( ','v)*) '}'            #set
     ;
 
 
@@ -46,11 +48,11 @@ operator:
     |   'get_labels'
     ;
 
-lambda: id '=>' code;
+lambda: id '=>' CODE;
 
-code: '{{' value=.*? '}}';
+CODE: '{{' .*? '}}';
 
-STRING  : [A-Za-z_]+;
+STRING  : [A-Za-z_-]+;
 WS : [ \t\n\r]+ -> skip;
 INT     : [0-9]+ ;
 

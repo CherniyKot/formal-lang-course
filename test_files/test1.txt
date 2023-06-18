@@ -1,0 +1,15 @@
+p = <Hello>|<World>;
+print(p);
+
+print(p.get_vertices());
+print(p.get_vertices().map(x=>{{x*2}}));
+print(p.get_vertices().map(y=>{{y in p.states}}));
+
+p=<New>:<One>;
+print(p);
+print('----------------');
+print(p.get_reachable());
+r=p.get_reachable();
+print(r);
+print(p.get_vertices());
+print(p.get_vertices().filter(n=>{{n in map(lambda x:x[0], r)}}));
