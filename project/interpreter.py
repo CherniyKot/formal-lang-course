@@ -268,8 +268,12 @@ class Visitor(GramVisitor):
             result = list()
             for i in s:
                 context = dict()
-                context['__param__'] = i
-                exec(f"__result__ = (lambda {id.value}:{code})(__param__)", self.vars, context)
+                context["__param__"] = i
+                exec(
+                    f"__result__ = (lambda {id.value}:{code})(__param__)",
+                    self.vars,
+                    context,
+                )
                 result.append(context["__result__"])
             return result
 
